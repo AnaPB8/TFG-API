@@ -2,12 +2,12 @@ const mongoose = require('mongoose');
 
 const testSchema = new mongoose.Schema({
     testId: {
-        type: String,
+        type: mongoose.Schema.Types.ObjectId,
         required: true,
         unique: true
     },
     asignaturaId: {
-        type: String,
+        type: mongoose.Schema.Types.ObjectId,
         ref: 'Asignatura',
         required: true
     },

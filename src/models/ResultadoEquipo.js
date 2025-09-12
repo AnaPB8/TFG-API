@@ -1,9 +1,9 @@
 const mongoose = require('mongoose');
 
-const enroladoSchema = new mongoose.Schema({
-    usuarioId: {
+const resultadoEquipoSchema = new mongoose.Schema({
+    testId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Usuario',
+        ref: 'Test',
         required: true
     },
     claseId: {
@@ -15,14 +15,20 @@ const enroladoSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Equipo',
         required: true
+    },
+    nombreObj: {
+        type: String
+    },
+    imagen: {
+        type:String
     }
 }, {
     timestamps: true
 });
 
-enroladoSchema.index(
-    { usuarioId: 1, claseId: 1, equipoId: 1 },
+resultadoEquipoSchema.index(
+    { testId: 1, claseId: 1, equipoId: 1 },
     { unique: true }
 );
 
-module.exports = mongoose.model('Enrolado', enroladoSchema, 'enrolado');
+module.exports = mongoose.model('ResultadoEquipo', resultadoEquipoSchema, 'resultadoEquipo');

@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 
 const usuarioSchema = new mongoose.Schema({
     usuarioId: {
-        type: String,
+        type: mongoose.Schema.Types.ObjectId,
         required: true,
         unique: true
     },
@@ -20,10 +20,12 @@ const usuarioSchema = new mongoose.Schema({
         type: String,
         enum: ['ESTUDIANTE', 'PROFESOR'],
         required: true
+        default: 'ESTUDIANTE'
     },
     modeloId: {
-        type: String,
-        ref: 'Modelos'
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Modelos',
+        required: true
     },
     monedas: {
         type: Number,
@@ -37,7 +39,10 @@ const usuarioSchema = new mongoose.Schema({
         type: String,
         default: 'es'
     },
-    uo: String
+    uo: {
+        type: String,
+        unique: true
+    }
 }, {
     timestamps: true
 });

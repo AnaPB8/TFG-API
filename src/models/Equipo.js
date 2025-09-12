@@ -2,12 +2,12 @@ const mongoose = require('mongoose');
 
 const equipoSchema = new mongoose.Schema({
     equipoId: {
-        type: String,
+        type: mongoose.Schema.Types.ObjectId,
         required: true,
         unique: true
     },
     claseId: {
-        type: String,
+        type: mongoose.Schema.Types.ObjectId,
         ref: 'Clase',
         required: true
     },
@@ -23,7 +23,9 @@ const equipoSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
-    imagen: String
+    imagen: {
+        type: String
+    }
 }, {
     timestamps: true
 });
