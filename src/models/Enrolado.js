@@ -1,9 +1,9 @@
 const mongoose = require('mongoose');
 
 const enroladoSchema = new mongoose.Schema({
-    usuarioId: {
+    estudianteId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Usuario',
+        ref: 'Estudiante',
         required: true
     },
     claseId: {
@@ -21,7 +21,7 @@ const enroladoSchema = new mongoose.Schema({
 });
 
 enroladoSchema.index(
-    { usuarioId: 1, claseId: 1, equipoId: 1 },
+    { estudianteId: 1, claseId: 1, equipoId: 1 },
     { unique: true }
 );
 
