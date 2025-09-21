@@ -1,6 +1,8 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
-const Usuario = require('../models/Usuario');
+const bcrypt = require('bcryptjs');
+const Estudiante = require('../models/Estudiante');
+const Profesor = require('../models/Profesor');
 const router = express.Router();
 
 // Generate JWT
@@ -10,67 +12,141 @@ const generateToken = (id) => {
     });
 };
 
-// @desc    Register a user
-// @route   POST /api/auth/register
+// @desc    Register a student
+// @route   POST /api/auth/register/estudiante
 // @access  Public
-router.post('/register', async (req, res) => {
+router.post('/register/estudiante', async (req, res) => {
     try {
-        const { usuarioId, username, password, rol } = req.body;
+        const { estudianteId, username, password, uo, modeloActualId } = req.body;
 
-        // Verify if the user exists
-        const usuarioExiste = await Usuario.findOne({ 
-            $or: [{ username }, { usuarioId }] 
+        // Check if student exists
+        const estudianteExiste = await Estudiante.findOne({ 
+            $or: [{ username }, { estudianteId }] 
         });
 
-        if (usuarioExiste) {
-            return res.status(400).json({ message: 'The user already exists' });
+        if (estudianteExiste) {
+            return res.status(400).json({ message: 'Student already exists' });
         }
 
-        // Create the user
-        const usuario = await Usuario.create({
-            usuarioId,
+        // Hash password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        // Create student
+        const estudiante = await Estudiante.create({
+            estudianteId,
             username,
-            password,
-            rol
+            password: hashedPassword,
+            uo,
+            modeloActualId,
+            monedas: 0,
+            idioma: 'es'
         });
 
-        if (usuario) {
-            res.status(201).json({
-                _id: usuario._id,
-                usuarioId: usuario.usuarioId,
-                username: usuario.username,
-                rol: usuario.rol,
-                token: generateToken(usuario._id)
-            });
-        }
+        res.status(201).json({
+            _id: estudiante._id,
+            estudianteId: estudiante.estudianteId,
+            username: estudiante.username,
+            userType: 'estudiante',
+            monedas: estudiante.monedas,
+            token: generateToken(estudiante._id)
+        });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Server error' });
     }
 });
 
-// @desc    Authentificate the user
+// @desc    Register a professor
+// @route   POST /api/auth/register/profesor
+// @access  Public
+router.post('/register/profesor', async (req, res) => {
+    try {
+        const { profesorId, username, password, modeloActualId } = req.body;
+
+        // Check if professor exists
+        const profesorExiste = await Profesor.findOne({ 
+            $or: [{ username }, { profesorId }] 
+        });
+
+        if (profesorExiste) {
+            return res.status(400).json({ message: 'Professor already exists' });
+        }
+
+        // Hash password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        // Create professor
+        const profesor = await Profesor.create({
+            profesorId,
+            username,
+            password: hashedPassword,
+            verificado: false,
+            modeloActualId,
+            idioma: 'es'
+        });
+
+        res.status(201).json({
+            _id: profesor._id,
+            profesorId: profesor.profesorId,
+            username: profesor.username,
+            userType: 'profesor',
+            verificado: profesor.verificado,
+            token: generateToken(profesor._id)
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// @desc    Login user (student or professor)
 // @route   POST /api/auth/login
 // @access  Public
 router.post('/login', async (req, res) => {
     try {
         const { username, password } = req.body;
 
-        // Search a user
-        const usuario = await Usuario.findOne({ username });
+        // Try to find user in Estudiante collection first
+        let user = await Estudiante.findOne({ username });
+        let userType = 'estudiante';
 
-        if (usuario && (await usuario.matchPassword(password))) {
-            res.json({
-                _id: usuario._id,
-                usuarioId: usuario.usuarioId,
-                username: usuario.username,
-                rol: usuario.rol,
-                monedas: usuario.monedas,
-                token: generateToken(usuario._id)
-            });
-        } else {
-            res.status(401).json({ message: 'Invalid credentials' });
+        // If not found, try Profesor collection
+        if (!user) {
+            user = await Profesor.findOne({ username });
+            userType = 'profesor';
         }
+
+        if (!user) {
+            return res.status(401).json({ message: 'Invalid credentials' });
+        }
+
+        // Check password
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        
+        if (!isPasswordValid) {
+            return res.status(401).json({ message: 'Invalid credentials' });
+        }
+
+        // Prepare response based on user type
+        const response = {
+            _id: user._id,
+            username: user.username,
+            userType: userType,
+            token: generateToken(user._id)
+        };
+
+        if (userType === 'estudiante') {
+            response.estudianteId = user.estudianteId;
+            response.monedas = user.monedas;
+            response.uo = user.uo;
+        } else {
+            response.profesorId = user.profesorId;
+            response.verificado = user.verificado;
+        }
+
+        res.json(response);
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Server error' });

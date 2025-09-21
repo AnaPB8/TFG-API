@@ -5,7 +5,9 @@ const connectDB = require('./config/database');
 // Import the routes
 const authRoutes = require('./routes/auth');
 const testRoutes = require('./routes/test');
-const usuarioRoutes = require('./routes/usuario');
+const estudianteRoutes = require('./routes/estudiante');
+const profesorRoutes = require('./routes/profesor');
+const equipoRoutes = require('./routes/equipo');
 
 // Connect to the database
 connectDB();
@@ -20,10 +22,10 @@ const corsOptions = {
 
 // Middleware
 app.use(cors(corsOptions));
-app.use(express.json({ limit: '10mb' })); // Increased limit for larger requests
+app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Logging middleware (helpful for debugging)
+// Logging middleware
 app.use((req, res, next) => {
     console.log(`${req.method} ${req.path} - ${new Date().toISOString()}`);
     next();
@@ -32,7 +34,9 @@ app.use((req, res, next) => {
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/tests', testRoutes);
-app.use('/api/usuarios', usuarioRoutes);
+app.use('/api/estudiantes', estudianteRoutes);
+app.use('/api/profesores', profesorRoutes);
+app.use('/api/equipos', equipoRoutes);
 
 // Health check route
 app.get('/health', (req, res) => {
@@ -51,25 +55,28 @@ app.get('/', (req, res) => {
         endpoints: {
             auth: '/api/auth',
             tests: '/api/tests',
+            estudiantes: '/api/estudiantes',
+            profesores: '/api/profesores',
+            equipos: '/api/equipos',
             health: '/health'
         }
     });
 });
 
-// Middleware for handling 404 (route not found)
+// 404 handler
 app.use('*', (req, res) => {
     res.status(404).json({ 
         message: `Route not found: ${req.method} ${req.originalUrl}`,
-        availableRoutes: ['/api/auth', '/api/tests', '/health']
+        availableRoutes: ['/api/auth', '/api/tests', '/api/estudiantes', '/api/profesores', '/api/equipos', '/health']
     });
 });
 
-// Middleware for error handling
+// Error handler
 app.use((err, req, res, next) => {
     console.error('Error:', err.stack);
     res.status(500).json({ 
         message: 'Something went wrong',
-        error: err.message
+        error: process.env.NODE_ENV === 'production' ? 'Internal Server Error' : err.message
     });
 });
 
